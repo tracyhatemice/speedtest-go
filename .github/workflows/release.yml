@@ -49,6 +49,7 @@ jobs:
             build
             --clean
             --single-target
+            --snapshot
             --output dist/speedtest-go-linux-${{ inputs.arch }}
         env:
           GOOS: linux
