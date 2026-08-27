@@ -5,23 +5,31 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      arch:
+        description: Target architecture
+        required: true
+        type: choice
+        default: amd64
+        options:
+          - amd64
+          - arm64
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      -
-        name: Set up Go
+      
+      - name: Set up Go
         uses: actions/setup-go@v7
         with:
           go-version: 1.27.0
-      -
-        name: Publish release
+      
+      - name: Publish release
         if: startsWith(github.ref, 'refs/tags/')
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -30,19 +38,26 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - 
-        name: Build snapshot
+      
+      - name: Build selected architecture
         if: github.event_name == 'workflow_dispatch'
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --snapshot
-      - 
-        name: Upload snapshot artifacts
+          args: >-
+            build
+            --clean
+            --single-target
+            --output dist/speedtest-go-linux-${{ inputs.arch }}
+        env:
+          GOOS: linux
+          GOARCH: ${{ inputs.arch }}
+
+      - name: Upload selected binary
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v6
         with:
-          name: goreleaser-snapshot
-          path: dist/*
+          name: speedtest-go-linux-${{ inputs.arch }}
+          path: dist/speedtest-go-linux-${{ inputs.arch }}
           retention-days: 14
